@@ -369,7 +369,7 @@ static if (Yurai_UseMysql)
       return result.get.coerce!T;
     }
 
-    T selectSingle(T)(string query, DbParam[] params)
+    T selectSingle(T)(string query, DbParam[] params, string table = null)
     {
       enum generateResult = generateSelect!T;
 
