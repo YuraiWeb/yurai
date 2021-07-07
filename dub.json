@@ -1,6 +1,6 @@
 {
 	"name": "yurai",
-	"description": "A fast and modern full-stack web framework usable on-top any backends such as vibe.d",
+	"description": "A fast and modern full-stack web framework usable on-top of any backends such as vibe.d",
 	"authors": [
 		"Jacob Jensen"
 	],
