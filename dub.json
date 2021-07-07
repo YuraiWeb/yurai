@@ -1,0 +1,14 @@
+{
+	"name": "yurai",
+	"description": "A fast and modern full-stack web framework usable on-top any backends such as vibe.d",
+	"authors": [
+		"Jacob Jensen"
+	],
+	"homepage": "https://yuraiweb.org/",
+	"license": "The MIT License (MIT)",
+	"copyright": "Copyright © 2021 Yurai Web Framework",
+	"targetType": "sourceLibrary",
+	"sourcePaths": [
+		"source"
+	]
+}
