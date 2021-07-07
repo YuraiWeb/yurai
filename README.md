@@ -1,5 +1,7 @@
 # yurai
 
+![logo](https://yuraiweb.org/images/longlogo.png "Yurai Logo")
+
 Yurai is a fast and modern full-stack web framework that can be used on-top of any other web frameworks such as vibe.d
 
 It's entirely written in D and has no initial dependencies but recommended dependencies as of now are vibe.d [~>0.9.3] and mysql-native [~>3.0.2] (if you need mysql / mariadb support.)
