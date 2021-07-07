@@ -47,7 +47,7 @@ public final class ApiControllerContentMiddleware : IContentMiddleware
       {{
         mixin("import moduleImport = " ~ controllerModule ~ ";");
 
-        foreach (symbolName; __traits(allMembers, moduleImport))
+        static foreach (symbolName; __traits(allMembers, moduleImport))
         {
           static if (__traits(compiles, { mixin("alias symbol = moduleImport." ~ symbolName ~ ";"); }))
           {
