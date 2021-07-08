@@ -287,6 +287,10 @@ Token[] parse(string content)
           // parse content as partialView
           reader.basicDepthTagParsing('<', '>', token, tokens);
         }
+        else
+        {
+          contentToken.content ~= reader.current;
+        }
       }
       else
       {

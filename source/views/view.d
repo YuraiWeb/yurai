@@ -22,7 +22,7 @@ public abstract class View
     _request = request;
     _response = response;
 
-    _placeholders["doctype"] = "<!DOCTYPE html>";
+    _placeholders["doctype"] = "<!doctype html>";
   }
 
   @property

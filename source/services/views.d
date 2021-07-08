@@ -19,9 +19,11 @@ public final class ViewsContentMiddleware : IContentMiddleware
   public:
   ContentMiddlewareState handle(IHttpRequest request, IHttpResponse response)
   {
+    import std.array : join;
+    
     import yurai.prebuild.viewsmap : processView;
 
-    auto route = request.path && request.path.length && request.path[0].length ? request.path[0] : "/";
+    auto route = request.path && request.path.length && request.path[0].length ? request.path.join("/") : "/";
 
     auto result = processView(route, request, response);
 

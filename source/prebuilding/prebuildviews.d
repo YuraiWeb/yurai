@@ -35,10 +35,16 @@ void prebuildViews()
           continue;
         }
 
+        if (token.templateType != TemplateType.content)
+        {
+          viewInformation.lastWasContent = false;
+        }
+
         switch (token.templateType)
         {
           case TemplateType.content:
             parseContent(token, viewInformation);
+            viewInformation.lastWasContent = true;
             break;
 
           case TemplateType.meta:
@@ -51,6 +57,7 @@ void prebuildViews()
 
           case TemplateType.placeholder:
             parsePlaceholder(token, viewInformation);
+            viewInformation.lastWasContent = true;
             break;
 
           case TemplateType.mixinStatement:
@@ -71,6 +78,7 @@ void prebuildViews()
 
           case TemplateType.partialView:
             parsePartialView(token, viewInformation);
+            viewInformation.lastWasContent = true;
             break;
 
           default: break;
@@ -99,6 +107,7 @@ class ViewInformation
   string[] routes;
   string[] executePreContent;
   string[] executeContent;
+  bool lastWasContent;
 
   this()
   {
@@ -113,7 +122,7 @@ void parseContent(Token token, ViewInformation view)
   import std.string : format,strip;
   import std.array : replace;
 
-  if (!view.executeContent.length && !token.content.strip.length)
+  if ((!view.executeContent.length || !view.lastWasContent) && !token.content.strip.length)
   {
     return;
   }
@@ -295,7 +304,24 @@ void prebuildViewClasses(ViewInformation[] viewInformations)
 
   enum finalModule = `module yurai.prebuild.views.view_%s;
 
+// Subset of implicit available modules from the standard library.
+import std.stdio;
+import std.file;
+import std.algorithm;
+import std.string;
+import std.array;
+import std.datetime;
+import std.format;
+import std.math;
+import std.range;
+import std.random;
+import std.uni;
+import std.traits;
+import std.regex;
+
 import yurai;
+
+import models;
 
 public final class view_%s : View
 {
