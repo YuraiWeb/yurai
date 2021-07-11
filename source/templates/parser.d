@@ -21,6 +21,11 @@ public final class Token
 
     content = "";
   }
+
+  override string toString()
+  {
+    return content;
+  }
 }
 
 public final class StringReader
@@ -123,7 +128,7 @@ public class ScopeStack
 public:
 Token[] parse(string content)
 {
-  import std.stdio : writefln;
+  import std.stdio : writeln, writefln;
 
   Token[] tokens = [];
 
@@ -292,7 +297,7 @@ Token[] parse(string content)
           contentToken.content ~= reader.current;
         }
       }
-      else
+      else if (reader.current != '\\' || reader.next != '@')
       {
         if (scopeStack.has)
         {
@@ -342,7 +347,7 @@ Token[] parse(string content)
 private:
 void basicDepthTagParsing(StringReader reader, char tagStart, char tagEnd, Token token, ref Token[] tokens)
 {
-  size_t tagDepth = 0;
+  ptrdiff_t tagDepth = 0;
 
   while (reader.has)
   {

@@ -7,20 +7,37 @@ module yurai.views.view;
 
 import yurai.core;
 import yurai.views.viewresult;
+import yurai.external.iserver;
 
 public abstract class View
 {
   private:
   IHttpRequest _request;
   IHttpResponse _response;
+  IServer _server;
   string _content;
   string[string] _placeholders;
+  string _name;
+  string _contentType;
+  string _section;
+  string[] _routes;
 
   protected:
-  this(IHttpRequest request, IHttpResponse response)
+  this(IHttpRequest request, IHttpResponse response, string[] routes = null)
   {
+    this(null, request, response, null);
+  }
+
+  this(string name, IHttpRequest request, IHttpResponse response, string[] routes = null)
+  {
+    _name = name;
+
     _request = request;
     _response = response;
+
+    _server = _request.server;
+
+    _routes = routes;
 
     _placeholders["doctype"] = "<!doctype html>";
   }
@@ -30,11 +47,22 @@ public abstract class View
     IHttpRequest request() { return _request; }
 
     IHttpResponse response() { return _response; }
+
+    IServer server() { return _server; }
+
+    string name() { return _name; }
+
+    string[] routes() { return _routes; }
   }
 
-  ViewResult finalizeContent(string layout = null)
+  void setContentType(string contentType)
   {
-    if (layout && layout.length)
+    _contentType = contentType;
+  }
+
+  ViewResult finalizeContent(string layout = null, bool processLayout = true)
+  {
+    if (layout && layout.length && processLayout)
     {
       import yurai.prebuild.viewsmap;
 
@@ -42,17 +70,19 @@ public abstract class View
 
       if (layoutView)
       {
+        layoutView._name = _name;
+
         foreach (k,v; _placeholders)
         {
           layoutView.setPlaceholder(k, v);
         }
 
         layoutView.setPlaceholder("view", _content);
-        return layoutView.generate();
+        return layoutView.generate(true);
       }
     }
 
-    return new ViewResult(_content ? _content : "");
+    return new ViewResult(_content ? _content : "", _contentType);
   }
 
   void renderPartial(string name)
@@ -68,7 +98,7 @@ public abstract class View
         partialView.setPlaceholder(k, v);
       }
 
-      auto result = partialView.generateFinal();
+      auto result = partialView.generateFinal(true);
 
       if (!result)
       {
@@ -114,6 +144,20 @@ public abstract class View
     return _placeholders.get(key, defaultValue ? defaultValue : "");
   }
 
+  void appendPlaceholder(string key, string value)
+  {
+    auto content = getPlaceholder(key);
+
+    content ~= value;
+
+    setPlaceholder(key, content);
+  }
+
+  void setSection(string name)
+  {
+    _section = name == "*" ? null : ("section: " ~ name);
+  }
+
   void escaped(T)(T data)
   {
     import std.conv : to;
@@ -130,13 +174,22 @@ public abstract class View
   {
     import std.conv : to;
 
+    import std.stdio;
+
     auto s = to!string(data);
 
-    _content ~= s;
+    if (_section && _section != "*")
+    {
+      appendPlaceholder(_section, s);
+    }
+    else
+    {
+      _content ~= s;
+    }
   }
 
   public:
-  abstract ViewResult generate();
+  abstract ViewResult generate(bool processLayout);
 
-  abstract ViewResult generateFinal();
+  abstract ViewResult generateFinal(bool processLayout);
 }

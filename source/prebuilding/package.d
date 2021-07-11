@@ -11,8 +11,8 @@ public
   import yurai.prebuilding.prebuildviews;
 }
 
-void preBuild()
+void preBuild(string[] registeredViews)
 {
   prebuildControllers();
-  prebuildViews();
+  prebuildViews(registeredViews);
 }

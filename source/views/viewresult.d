@@ -9,21 +9,31 @@ public final class ViewResult
 {
   private:
   string _content;
+  string _contentType;
 
   public:
   final:
-  this(string content)
+  this(string content, string contentType = null)
   {
     _content = content ? content : "";
+    _contentType = contentType ? (contentType ~ "; charset=UTF-8") : "";
+
+    if (!_contentType || !_contentType.length)
+    {
+      _contentType = "text/html; charset=UTF-8";
+    }
   }
 
   this()
   {
     _content = null;
+    _contentType = "text/html; charset=UTF-8";
   }
 
   @property
   {
     string content() { return _content; }
+
+    string contentType() { return _contentType; }
   }
 }

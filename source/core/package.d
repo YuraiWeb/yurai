@@ -16,5 +16,6 @@ public
   import yurai.core.meta;
   import yurai.core.server;
   import yurai.core.settings;
+  import yurai.core.stdsubset;
   import yurai.core.strings;
 }

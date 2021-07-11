@@ -20,7 +20,7 @@ public final class ViewsContentMiddleware : IContentMiddleware
   ContentMiddlewareState handle(IHttpRequest request, IHttpResponse response)
   {
     import std.array : join;
-    
+
     import yurai.prebuild.viewsmap : processView;
 
     auto route = request.path && request.path.length && request.path[0].length ? request.path.join("/") : "/";
@@ -34,7 +34,7 @@ public final class ViewsContentMiddleware : IContentMiddleware
 
     if (result.content !is null)
     {
-      response.contentType = "text/html; charset=UTF-8";
+      response.contentType = result.contentType;
 
       response.writeBody(result.content);
     }

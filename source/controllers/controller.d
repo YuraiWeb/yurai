@@ -9,6 +9,7 @@ import yurai.core;
 import yurai.controllers.status;
 import yurai.controllers.controlleraction;
 import yurai.controllers.controlleractionset;
+import yurai.external.iserver;
 
 ///
 public class Controller
@@ -16,6 +17,7 @@ public class Controller
   private:
   IHttpRequest _request;
   IHttpResponse _response;
+  IServer _server;
   ControllerActionSet[string] _actions;
 
   void createMissingActionSet(string method)
@@ -35,6 +37,7 @@ public class Controller
   {
     _request = request;
     _response = response;
+    _server = _request.server;
   }
 
   final:
@@ -43,6 +46,8 @@ public class Controller
     IHttpRequest request() { return _request; }
 
     IHttpResponse response() { return _response; }
+
+    IServer server() { return _server; }
   }
 
   void mapMandatoryAction(string method, ControllerAction action)

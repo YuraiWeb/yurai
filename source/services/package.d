@@ -8,6 +8,7 @@ module yurai.services;
 public
 {
   import yurai.services.contentservice;
+  import yurai.services.imailservice;
   import yurai.services.middlewarestate;
   import yurai.services.postservice;
   import yurai.services.preservice;

@@ -46,3 +46,12 @@ else
 {
   static const bool Yurai_UseMysql = false;
 }
+
+version (YURAI_VIBE_D_MAIL)
+{
+  static const bool Yurai_UseVibed_Mail = true;
+}
+else
+{
+  static const bool Yurai_UseVibed_Mail = false;
+}

@@ -6,6 +6,7 @@
 module yurai.core.ihttprequest;
 
 import yurai.core.fileupload;
+import yurai.external.iserver;
 
 public interface IHttpRequest
 {
@@ -18,6 +19,7 @@ public interface IHttpRequest
     string textBody();
     string method();
     string host();
+    IServer server();
   }
 
   string getHeader(string key);

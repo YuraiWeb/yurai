@@ -3,13 +3,13 @@
 * License: MIT (https://github.com/YuraiWeb/yurai/blob/main/LICENSE)
 * Author: Jacob Jensen (bausshf)
 */
-module yurai.external.vibed;
+module yurai.external.servers.vibed;
 
 import yurai.core.settings;
 
 static if (Yurai_UseVibed)
 {
-  import yurai.external.iserver;
+  import yurai.external;
   import yurai.core.ihttprequest;
   import yurai.core.ihttpresponse;
   import yurai.core.fileupload;
@@ -26,6 +26,7 @@ static if (Yurai_UseVibed)
     IPreMiddleware[] _preMiddleware;
     IPostMiddleware[] _postMiddleware;
     IContentMiddleware[] _contentMiddleware;
+    IMailService _mailService;
 
     this()
     {
@@ -90,6 +91,13 @@ static if (Yurai_UseVibed)
       return this;
     }
 
+    IServer registerMailService(IMailService mailService)
+    {
+      _mailService = mailService;
+
+      return this;
+    }
+
     @property
     {
       IPreMiddleware[] preServices()
@@ -106,6 +114,11 @@ static if (Yurai_UseVibed)
       {
         return _postMiddleware;
       }
+
+      IMailService mailService()
+      {
+        return _mailService;
+      }
     }
 
     private:
@@ -113,7 +126,7 @@ static if (Yurai_UseVibed)
     {
       import yurai.core.server;
 
-      handleServer(this, new VibedHttpRequest(request), new VibedHttpResponse(response));
+      handleServer(this, new VibedHttpRequest(this, request), new VibedHttpResponse(this, response));
     }
   }
 
@@ -129,15 +142,17 @@ static if (Yurai_UseVibed)
     LazyLoad!(string[string]) _query;
     LazyLoad!(string[string]) _form;
     LazyLoad!(FileUpload[]) _files;
+    IServer _server;
 
     final:
-    this(HTTPServerRequest request)
+    this(IServer server, HTTPServerRequest request)
     {
       import std.array : split, array;
       import std.conv : to;
       import std.string : toLower, strip;
       import std.algorithm : map;
 
+      _server = server;
       _request = request;
 
       auto requestPath = _request.requestPath.toString().strip;
@@ -271,6 +286,8 @@ static if (Yurai_UseVibed)
       {
         return _request.host;
       }
+
+      IServer server() { return _server; }
     }
 
     string getHeader(string key)
@@ -323,10 +340,12 @@ static if (Yurai_UseVibed)
     string _redirectedUrl;
     bool _shouldFlush;
     bool _hasBodyContent;
+    IServer _server;
 
     final:
-    this(HTTPServerResponse response)
+    this(IServer server, HTTPServerResponse response)
     {
+      _server = server;
       _response = response;
       _writeDisabled = false;
     }
@@ -355,6 +374,8 @@ static if (Yurai_UseVibed)
       {
         _response.statusCode = status;
       }
+
+      IServer server() { return _server; }
     }
 
     void addHeader(string key, string value)

@@ -4,6 +4,7 @@
 * Author: Jacob Jensen (bausshf)
 */
 module yurai.core.ihttpresponse;
+import yurai.external.iserver;
 
 public interface IHttpResponse
 {
@@ -16,6 +17,7 @@ public interface IHttpResponse
     bool hasBodyContent();
     int statusCode();
     void statusCode(int status);
+    IServer server();
   }
 
   void addHeader(string key, string value);

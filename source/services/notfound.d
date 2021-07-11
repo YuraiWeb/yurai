@@ -28,7 +28,7 @@ public final class NotFoundContentMiddleware : IContentMiddleware
       return ContentMiddlewareState.shouldContinue;
     }
 
-    auto result = notFoundView.generate();
+    auto result = notFoundView.generate(true);
     auto content = result && result.content && result.content.length ? result.content : "";
 
     response.contentType = "text/html; charset=UTF-8";

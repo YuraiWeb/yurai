@@ -7,7 +7,7 @@ module yurai.prebuilding.prebuildviews;
 
 import yurai.templates;
 
-void prebuildViews()
+void prebuildViews(string[] registeredViews)
 {
   import std.file : dirEntries, SpanMode, readText, remove;
   import std.algorithm : filter, endsWith;
@@ -21,74 +21,23 @@ void prebuildViews()
 
   foreach (string name; dirEntries("views", SpanMode.depth).filter!(f => f.name.endsWith(".dd")))
   {
-    auto viewInformation = new ViewInformation;
     string content = readText(name);
 
-    auto tokens = parse(content);
+    auto viewInformation = parseView(content);
 
-    if (tokens && tokens.length)
+    if (viewInformation.name && viewInformation.name.length)
     {
-      foreach (token; tokens)
-      {
-        if (!token || !token.content || !token.content.length)
-        {
-          continue;
-        }
+      viewInformations ~= viewInformation;
+    }
+  }
 
-        if (token.templateType != TemplateType.content)
-        {
-          viewInformation.lastWasContent = false;
-        }
+  foreach (content; registeredViews)
+  {
+    auto viewInformation = parseView(content);
 
-        switch (token.templateType)
-        {
-          case TemplateType.content:
-            parseContent(token, viewInformation);
-            viewInformation.lastWasContent = true;
-            break;
-
-          case TemplateType.meta:
-            parseMeta(token, viewInformation);
-            break;
-
-          case TemplateType.placeholderValue:
-            parsePlaceholderValue(token, viewInformation);
-            break;
-
-          case TemplateType.placeholder:
-            parsePlaceholder(token, viewInformation);
-            viewInformation.lastWasContent = true;
-            break;
-
-          case TemplateType.mixinStatement:
-            parseMixinStatement(token, viewInformation);
-            break;
-
-          case TemplateType.mixinCodeBlock:
-            parseMixinCodeBlock(token, viewInformation);
-            break;
-
-          case TemplateType.mixinExpression:
-            parseMixinExpression(token, viewInformation);
-            break;
-
-          case TemplateType.mixinEscapeExpression:
-            parseMixinEscapedExpression(token, viewInformation);
-            break;
-
-          case TemplateType.partialView:
-            parsePartialView(token, viewInformation);
-            viewInformation.lastWasContent = true;
-            break;
-
-          default: break;
-        }
-      }
-
-      if (viewInformation.name && viewInformation.name.length)
-      {
-        viewInformations ~= viewInformation;
-      }
+    if (viewInformation.name && viewInformation.name.length)
+    {
+      viewInformations ~= viewInformation;
     }
   }
 
@@ -98,6 +47,74 @@ void prebuildViews()
 }
 
 private:
+ViewInformation parseView(string content)
+{
+  auto viewInformation = new ViewInformation;
+  auto tokens = parse(content);
+
+  if (tokens && tokens.length)
+  {
+    foreach (token; tokens)
+    {
+      if (!token || !token.content || !token.content.length)
+      {
+        continue;
+      }
+
+      if (token.templateType != TemplateType.content)
+      {
+        viewInformation.lastWasContent = false;
+      }
+
+      switch (token.templateType)
+      {
+        case TemplateType.content:
+          parseContent(token, viewInformation);
+          viewInformation.lastWasContent = true;
+          break;
+
+        case TemplateType.meta:
+          parseMeta(token, viewInformation);
+          break;
+
+        case TemplateType.placeholderValue:
+          parsePlaceholderValue(token, viewInformation);
+          break;
+
+        case TemplateType.placeholder:
+          parsePlaceholder(token, viewInformation);
+          viewInformation.lastWasContent = true;
+          break;
+
+        case TemplateType.mixinStatement:
+          parseMixinStatement(token, viewInformation);
+          break;
+
+        case TemplateType.mixinCodeBlock:
+          parseMixinCodeBlock(token, viewInformation);
+          break;
+
+        case TemplateType.mixinExpression:
+          parseMixinExpression(token, viewInformation);
+          break;
+
+        case TemplateType.mixinEscapeExpression:
+          parseMixinEscapedExpression(token, viewInformation);
+          break;
+
+        case TemplateType.partialView:
+          parsePartialView(token, viewInformation);
+          viewInformation.lastWasContent = true;
+          break;
+
+        default: break;
+      }
+    }
+  }
+
+  return viewInformation;
+}
+
 class ViewInformation
 {
   string name;
@@ -108,6 +125,7 @@ class ViewInformation
   string[] executePreContent;
   string[] executeContent;
   bool lastWasContent;
+  string contentType;
 
   this()
   {
@@ -132,7 +150,7 @@ void parseContent(Token token, ViewInformation view)
 
 void parseMeta(Token token, ViewInformation view)
 {
-  import std.string : strip;
+  import std.string : strip, format;
   import std.array : split;
 
   auto pair = token.content.split(":");
@@ -164,6 +182,14 @@ void parseMeta(Token token, ViewInformation view)
 
     case "route":
       view.routes ~= value;
+      break;
+
+    case "content-type":
+      view.contentType = value;
+      break;
+
+    case "section":
+      view.executeContent ~= "setSection(`%s`);".format(value);
       break;
 
     default: break;
@@ -299,25 +325,11 @@ void prebuildPackage(ViewInformation[] viewInformations)
 void prebuildViewClasses(ViewInformation[] viewInformations)
 {
   import std.string : format;
-  import std.array : join;
+  import std.array : join, array;
+  import std.algorithm : map;
   import std.file : write;
 
   enum finalModule = `module yurai.prebuild.views.view_%s;
-
-// Subset of implicit available modules from the standard library.
-import std.stdio;
-import std.file;
-import std.algorithm;
-import std.string;
-import std.array;
-import std.datetime;
-import std.format;
-import std.math;
-import std.range;
-import std.random;
-import std.uni;
-import std.traits;
-import std.regex;
 
 import yurai;
 
@@ -330,23 +342,25 @@ public final class view_%s : View
   final:
   this(IHttpRequest request, IHttpResponse response)
   {
-    super(request,response);
+    super("%s", request,response, [%s]);
   }
 
-  override ViewResult generate()
+  override ViewResult generate(bool processLayout)
   {
     %s
 
-    return generateFinal();
+    return generateFinal(processLayout);
   }
   ViewResult generateModel(%s)
   {
     %s
-    return generateFinal();
+    return generateFinal(true);
   }
-  override ViewResult generateFinal()
+  override ViewResult generateFinal(bool processLayout)
   {
     %s
+    %s
+
     %s
 
     return finalizeContent(%s);
@@ -372,12 +386,15 @@ public final class view_%s : View
         view.name,
         view.name,
         view.model && view.model.length ? (view.model ~ " model;") : "",
+        view.name,
+        view.routes ? view.routes.map!(r => "`%s`".format(r)).array.join(",") : "",
         controllerCall,
         view.model && view.model.length ? (view.model ~ " model") : "",
         view.model && view.model.length ? ("this.model = model;") : "",
         view.executePreContent.join("\r\n"),
         view.executeContent.join("\r\n"),
-        view.layout && view.layout.length ? ("`" ~ view.layout ~ "`") : "");
+        view.contentType ? "setContentType(\"%s\");".format(view.contentType) : "",
+        view.layout && view.layout.length ? ("`" ~ view.layout ~ "`,processLayout") : "null,processLayout");
 
     write("prebuild/views/" ~ view.name ~ ".d", moduleCode);
   }
@@ -396,6 +413,11 @@ void prebuildViewsMap(ViewInformation[] viewInformations)
   import yurai.views;
   import yurai.core;
 
+  string[] getAllRoutes()
+  {
+    return [%s];
+  }
+
   View getView(string name, IHttpRequest request, IHttpResponse response)
   {
     switch (name)
@@ -407,7 +429,7 @@ void prebuildViewsMap(ViewInformation[] viewInformations)
     }
   }
 
-  ViewResult processView(string route, IHttpRequest request, IHttpResponse response)
+  ViewResult processView(string route, IHttpRequest request, IHttpResponse response, bool processLayout = true)
   {
     switch (route)
     {
@@ -422,10 +444,11 @@ void prebuildViewsMap(ViewInformation[] viewInformations)
         return new view_%s(request, response);`;
   enum viewProcessCaseFormat = `      case "%s":`;
   enum viewProcessFormat = `%s
-        return new view_%s(request, response).generate();`;
+        return new view_%s(request, response).generate(processLayout);`;
 
   string[] viewGet = [];
   string[] viewProcessing = [];
+  string[] viewRoutes = [];
 
   foreach (view; viewInformations)
   {
@@ -433,11 +456,15 @@ void prebuildViewsMap(ViewInformation[] viewInformations)
 
     if (view.routes && view.routes.length)
     {
+      viewRoutes ~= view.routes;
+
       string cases = view.routes.map!(r => viewProcessCaseFormat.format(r)).array.join("\r\n");
 
       viewProcessing ~= viewProcessFormat.format(cases, view.name);
     }
   }
 
-  write("prebuild/viewsmap.d", finalModule.format(viewGet.join("\r\n"), viewProcessing.join("\r\n")));
+  auto finalViewRoutes = viewRoutes.map!(r => "`%s`".format(r)).array.join(",");
+
+  write("prebuild/viewsmap.d", finalModule.format(finalViewRoutes, viewGet.join("\r\n"), viewProcessing.join("\r\n")));
 }

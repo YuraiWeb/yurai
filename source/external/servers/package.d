@@ -3,11 +3,9 @@
 * License: MIT (https://github.com/YuraiWeb/yurai/blob/main/LICENSE)
 * Author: Jacob Jensen (bausshf)
 */
-module yurai.external;
+module yurai.external.servers;
 
 public
 {
-  import yurai.external.iserver;
-  import yurai.external.servers;
-  import yurai.external.services;
+  import yurai.external.servers.vibed;
 }

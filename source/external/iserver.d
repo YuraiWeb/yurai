@@ -20,6 +20,9 @@ public interface IServer
   @property IPreMiddleware[] preServices();
   @property IContentMiddleware[] contentServices();
   @property IPostMiddleware[] postServices();
+  @property IMailService mailService();
+
+  IServer registerMailService(IMailService mailService);
 }
 
 private IServer[string] _servers;
@@ -44,13 +47,23 @@ IServer setupServer(string name, string[] ipAddresses, ushort port, string stati
   return server;
 }
 
+private string[] _registeredViews;
+
+void registerView(string file, string name, string route = null, string contentType = null, string additionalPreContent = null)
+{
+  import std.file : readText;
+  import std.string : format;
+
+  _registeredViews ~= "@[name: %s]\r\n%s%s%s".format(name, route ? "@[route: %s]\r\n".format(route) : "", contentType ? "@[content-type: %s]\r\n".format(contentType) : "", (additionalPreContent ? additionalPreContent : "") ~ readText(file));
+}
+
 bool registerServers()
 {
   static if (!Yurai_IsPreBuilding)
   {
     static if (Yurai_UseVibed)
     {
-      import yurai.external.vibed;
+      import yurai.external.servers.vibed;
       VibedServer.register();
     }
   }
@@ -58,7 +71,7 @@ bool registerServers()
   {
     import yurai.prebuilding : preBuild;
 
-    preBuild();
+    preBuild(_registeredViews);
   }
 
   return !Yurai_IsPreBuilding;
